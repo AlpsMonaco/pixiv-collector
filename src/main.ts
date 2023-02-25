@@ -21,10 +21,14 @@ function createWindow() {
         }
       ]
     }
-
   ])
   Menu.setApplicationMenu(menu)
-  mainWindow.loadFile('../index.html')
+  mainWindow.loadFile(
+    path.join(
+      path.dirname(__dirname),
+      "index.html"
+    )
+  )
   mainWindow.webContents.openDevTools()
 }
 

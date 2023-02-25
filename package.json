@@ -6,7 +6,8 @@
     "build": "tsc",
     "watch": "tsc -w",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
-    "start": "npm run build && electron ./dist/main.js"
+    "start": "npm run build && electron ./dist/main.js",
+    "package": "tsc --sourceMap false && electron-builder"
   },
   "repository": "https://github.com/AlpsMonaco/pixiv-collector",
   "keywords": [
@@ -18,8 +19,19 @@
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "electron": "^22.2.0",
+    "electron-builder": "^23.6.0",
     "eslint": "^7.32.0",
     "typescript": "^4.8.3"
   },
-  "dependencies": {}
+  "build": {
+    "appId": "pixiv-collector",
+    "directories": {
+      "output": "output"
+    },
+    "files": [
+      "index.html",
+      "dist/*.js"
+    ]
+  },
+  "main": "./dist/main.js"
 }
