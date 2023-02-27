@@ -1,47 +1,65 @@
-import { app, BrowserWindow, Menu, ipcMain } from "electron";
+import { app, BrowserWindow, Menu, ipcMain, ipcRenderer } from "electron";
 import * as path from "path";
 
-function createWindow() {
+
+
+async function CreateMainWindow() {
   const mainWindow = new BrowserWindow({
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
-    }
+      preload: path.join(__dirname, 'preload.js'),
+    },
+    width: 1024,
+    height: 768
   })
   const menu = Menu.buildFromTemplate([
     {
       label: app.name,
       submenu: [
         {
-          click: () => mainWindow.webContents.send('update-counter', 1),
-          label: 'Increment',
+          click: () => mainWindow.webContents.send('function-1', 1),
+          label: 'function-1',
         },
         {
-          click: () => mainWindow.webContents.send('update-counter', -1),
-          label: 'Decrement',
+          click: () => mainWindow.webContents.send('function-2', 1),
+          label: 'function-2',
+        },
+        {
+          click: () => {
+            let subwindow = new BrowserWindow({
+              parent: mainWindow,
+              modal: true,
+            })
+            subwindow.loadFile(
+              path.join(path.dirname(__dirname), 'index.html')
+            )
+          },
+          label: 'function-3',
+        },
+        {
+          click: () => mainWindow.webContents.openDevTools(),
+          label: 'Open Console',
         }
       ]
     }
   ])
   Menu.setApplicationMenu(menu)
-  mainWindow.loadFile(
-    path.join(
-      path.dirname(__dirname),
-      "index.html"
-    )
-  )
   mainWindow.webContents.openDevTools()
+  async function DevtoolsOpened() {
+    return new Promise<void>((resolve: () => void) => {
+      mainWindow.webContents.on('devtools-opened', function () {
+        resolve()
+      })
+    })
+  }
+  await DevtoolsOpened()
+  await mainWindow.loadURL("https://www.youdao.com/")
+  mainWindow.webContents.send('test')
 }
 
-app.whenReady().then(() => {
-  ipcMain.on('counter-value', (_event, value) => {
-    console.log(value) // will print value to Node console
+(async function name() {
+  await app.whenReady()
+  await CreateMainWindow()
+  app.on('window-all-closed', function () {
+    if (process.platform !== 'darwin') app.quit()
   })
-  createWindow()
-  app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
-
-app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') app.quit()
-})
+})()

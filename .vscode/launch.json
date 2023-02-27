@@ -34,6 +34,19 @@
       "outputCapture": "std",
       "console": "integratedTerminal",
       "preLaunchTask": "npm: build"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Current Typescript File",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "program": "${file}",
+      "outFiles": [
+        "${workspaceFolder}/**/*.js"
+      ],
+      "preLaunchTask": "npm: build"
     }
   ]
 }
