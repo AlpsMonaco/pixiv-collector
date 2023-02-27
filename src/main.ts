@@ -1,15 +1,13 @@
 import { app, BrowserWindow, Menu, ipcMain, ipcRenderer } from "electron";
 import * as path from "path";
 
-
-
 async function CreateMainWindow() {
   const mainWindow = new BrowserWindow({
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
-    width: 1024,
-    height: 768
+    width: 1280,
+    height: 720
   })
   const menu = Menu.buildFromTemplate([
     {
@@ -25,15 +23,9 @@ async function CreateMainWindow() {
         },
         {
           click: () => {
-            let subwindow = new BrowserWindow({
-              parent: mainWindow,
-              modal: true,
-            })
-            subwindow.loadFile(
-              path.join(path.dirname(__dirname), 'index.html')
-            )
+            mainWindow.reload()
           },
-          label: 'function-3',
+          label: 'Reload',
         },
         {
           click: () => mainWindow.webContents.openDevTools(),
@@ -42,18 +34,12 @@ async function CreateMainWindow() {
       ]
     }
   ])
-  Menu.setApplicationMenu(menu)
   mainWindow.webContents.openDevTools()
-  async function DevtoolsOpened() {
-    return new Promise<void>((resolve: () => void) => {
-      mainWindow.webContents.on('devtools-opened', function () {
-        resolve()
-      })
-    })
-  }
-  await DevtoolsOpened()
-  await mainWindow.loadURL("https://www.youdao.com/")
-  mainWindow.webContents.send('test')
+  Menu.setApplicationMenu(menu)
+  await mainWindow.webContents.session.setProxy(
+    { proxyRules: "socks5://127.0.0.1:7890" }
+  )
+  await mainWindow.loadURL("https://www.pixiv.net/tags/%E5%B0%BB/artworks")
 }
 
 (async function name() {
