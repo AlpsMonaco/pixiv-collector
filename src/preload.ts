@@ -29,6 +29,19 @@ function Function2() {
 
 }
 
+function GetUrlList(): Array<string> {
+  let url_list: Array<string> = []
+  const artwork_regex = new RegExp("^.+artworks/[0-9]+$")
+  document.querySelectorAll("a").forEach(
+    (a, _) => {
+      if (artwork_regex.test(a.href) && a.firstChild?.firstChild != undefined) {
+        url_list.push(a.href)
+      }
+    }
+  )
+  return url_list
+}
+
 
 ipcRenderer.on('function-1', () => { Function1() })
 ipcRenderer.on('function-2', () => { Function2() })

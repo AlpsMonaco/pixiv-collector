@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, BrowserWindowConstructorOptions, Config as ProxyConfig } from "electron";
 import * as path from "path";
 import config from "./config"
+import { Crawler } from "./crawler";
 
 async function GetMainWindowConfig(): Promise<BrowserWindowConstructorOptions> {
   let main_window_config: BrowserWindowConstructorOptions = {
@@ -43,7 +44,10 @@ async function CreateMenu(main_window: BrowserWindow) {
           label: 'function-1',
         },
         {
-          click: () => main_window.webContents.send('function-2', 1),
+          click: () => {
+            let crawler = new Crawler({ search_word: "景観" })
+            crawler.Start().then().catch(e => console.error(e))
+          },
           label: 'function-2',
         },
         {
