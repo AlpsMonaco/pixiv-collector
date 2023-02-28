@@ -45,7 +45,7 @@ async function CreateMenu(main_window: BrowserWindow) {
         },
         {
           click: () => {
-            let crawler = new Crawler({ search_word: "景観" })
+            let crawler = new Crawler({ search_word: "ブラジャー" })
             crawler.Start().then().catch(e => console.error(e))
           },
           label: 'function-2',
@@ -78,7 +78,10 @@ async function RegisterEvents(main_window: BrowserWindow) {
     app_config.window.width = size_list[0]
     app_config.window.height = size_list[1]
   })
-  main_window.on('maximize', () => { app_config.window.maxmized = true; main_window.show() })
+  main_window.on('maximize', (ev: { sender: BrowserWindow }) => {
+    app_config.window.maxmized = true
+    main_window.show()
+  })
   main_window.on('unmaximize', () => { app_config.window.maxmized = false })
 }
 
@@ -93,7 +96,7 @@ async function CreateMainWindow() {
   await main_window.webContents.session.setProxy(
     await GetProxyConfig()
   )
-  await main_window.loadURL("https://www.pixiv.net/tags/%E9%A2%A8%E6%99%AF%E7%94%BB/artworks?s_mode=s_tag")
+  await main_window.loadURL("https://www.pixiv.net")
 }
 
 function RegisterAppEvents() {

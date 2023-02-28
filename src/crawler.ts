@@ -1,7 +1,8 @@
 import { BrowserWindow, ipcMain, IpcMainEvent, ipcRenderer } from "electron"
 import * as path from "path"
+import { Image } from "./preload_master";
 
-type UrlList = Array<string>;
+type ImageList = Array<Image>;
 
 class Master {
   static readonly url_format = "https://www.pixiv.net/tags/{search_word}/artworks?p={page_num}"
@@ -11,23 +12,34 @@ class Master {
       webPreferences: {
         preload: path.join(__dirname, "preload_master.js")
       },
-      show: true
+      width: 1920,
+      height: 1080,
+      show: false,
     })
-    this.window.webContents.openDevTools()
+    // this.window.webContents.openDevTools()
   }
-  async Read(search_word: string, page_num: number): Promise<UrlList> {
-    let url = Master.url_format.replace("{search_word}", search_word).replace("{page_num}", page_num.toString())
-    await this.window.loadURL(url)
+  private async OnImageListReceived(search_word: string, page_num: number) {
     let event_name = search_word + "_" + page_num.toString()
-    this.window.webContents.send('parse-artworks', event_name)
-    let url_list = await new Promise<UrlList>(resolve => {
+    this.window.webContents.send('get-image-list', event_name)
+    return (await new Promise<ImageList>(resolve => {
       ipcMain.on(event_name,
-        (_listener: IpcMainEvent, url_list: UrlList) => {
+        (_listener: IpcMainEvent, url_list: ImageList) => {
           ipcMain.removeHandler(event_name)
           resolve(url_list)
         })
+    }))
+  }
+  private async RenderFullPage() {
+    this.window.webContents.send('render-full-page')
+    await new Promise<void>(resolve => {
+      ipcMain.on("on-full-page-render", () => { resolve() })
     })
-    return url_list
+  }
+  async Read(search_word: string, page_num: number): Promise<ImageList> {
+    let url = Master.url_format.replace("{search_word}", search_word).replace("{page_num}", page_num.toString())
+    await this.window.loadURL(url)
+    await this.RenderFullPage()
+    return await this.OnImageListReceived(search_word, page_num)
   }
 }
 
