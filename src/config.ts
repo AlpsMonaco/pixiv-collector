@@ -5,6 +5,7 @@ interface Window {
   y?: number,
   width?: number,
   height?: number,
+  maxmized?: boolean
 }
 
 interface Proxy {
@@ -21,6 +22,9 @@ class Config {
   constructor() {
     this.window = {}
     this.proxy = {}
+  }
+  Match(type_name: "number" | "string" | 'boolean', target: any, match_fn: () => void) {
+    if (typeof target == type_name) match_fn()
   }
   async Read() {
     try {
