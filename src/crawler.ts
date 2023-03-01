@@ -95,14 +95,12 @@ class Master {
     await this.RenderFullPage()
     const image_meta_list = await this.OnImageMetaListReceived()
     if (image_meta_list.length == 0) return null
-    const image_list: Array<Image> = []
+    const image_list: ImageList = []
     for (let i = 0; i < image_meta_list.length; i++) {
-      image_list.push(
-        {
-          image_data: { liked: -1 },
-          image_meta: image_meta_list[i],
-        }
-      )
+      image_list.push({
+        image_data: { liked: -1 },
+        image_meta: image_meta_list[i],
+      })
     }
     return {
       Next(): Image | null {
