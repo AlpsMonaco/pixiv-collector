@@ -102,9 +102,12 @@ class Master {
         image_meta: image_meta_list[i],
       })
     }
+    let cursor = 0
     return {
       Next(): Image | null {
-        return null
+        const index = cursor++
+        if (index >= image_list.length) return null
+        return image_list[index]
       }
     }
   }
@@ -123,17 +126,32 @@ export class Crawler {
   end_page: number
   work_number: number
   master: Master
+  worker_list: Array<Worker> = []
   constructor(options: CrawlerConstrutOptions) {
     this.search_word = options.search_word
     this.begin_page = typeof options.begin_page == "number" ? options.begin_page : 1
     this.end_page = typeof options.end_page == "number" ? options.end_page : 1
-    this.work_number = typeof options.work_number == "number" ? options.work_number : 1
+    if (this.end_page > this.begin_page) this.end_page = this.begin_page
+    this.work_number = typeof options.work_number == "number" ? options.work_number : 5
     this.master = new Master()
+    for (let i = 0; i < this.work_number; i++) {
+      this.worker_list.push(new Worker())
+    }
   }
 
   async Start(): Promise<void> {
-    const dispatcher = await this.master.Parse(this.search_word, this.begin_page)
-    if (dispatcher === null)
-      return
+    for (let page = this.begin_page; page <= this.end_page; page++) {
+      const dispatcher = await this.master.Parse(this.search_word, page)
+      if (dispatcher === null)
+        return
+      const promise_list: Array<Promise<void>> = []
+      for (let i = 0; i < this.worker_list.length; i++) {
+        const worker = this.worker_list[i]
+        promise_list.push(worker.Start(dispatcher))
+      }
+      for (let i = 0; i < promise_list.length; i++) {
+        await promise_list[i]
+      }
+    }
   }
 }

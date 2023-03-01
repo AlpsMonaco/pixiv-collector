@@ -1,6 +1,16 @@
-const promise = new Promise<void>((resolve) => {
-  console.log("1")
-  setTimeout(resolve, 1000)
-})
+function foo() {
+  let i = 1
+  return {
+    Do() {
+      const c = i++
+      console.log(c)
+    }
+  }
+}
 
-promise.then(() => { console.log("done") }).catch(err => console.error(err))
+
+const f = foo()
+f.Do()
+f.Do()
+f.Do()
+f.Do()
