@@ -45,10 +45,19 @@ async function CreateMenu(main_window: BrowserWindow) {
         },
         {
           click: () => {
-            const crawler = new Crawler({ search_word: "ブラジャー" })
-            crawler.Start().then().catch(e => console.error(e))
+             main_window.webContents.send('function-2', 1)
+            // const crawler = new Crawler({ search_word: "2B", begin_page: 1, end_page: 1, work_number: 1 })
+            // crawler.Start().then().catch(e => console.error(e))
           },
           label: 'function-2',
+        },
+        {
+          click: () => {
+            //  main_window.webContents.send('function-2', 1)
+            const crawler = new Crawler({ search_word: "2B", begin_page: 1, end_page: 1, work_number: 1 })
+            crawler.Start().then().catch(e => console.error(e))
+          },
+          label: 'function-3',
         },
         {
           click: () => {
@@ -102,7 +111,7 @@ async function CreateMainWindow() {
   await main_window.webContents.session.setProxy(
     await GetProxyConfig()
   )
-  await main_window.loadURL("https://www.pixiv.net")
+  await main_window.loadURL("https://www.pixiv.net/artworks/80993683")
 }
 
 function RegisterAppEvents() {

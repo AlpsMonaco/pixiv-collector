@@ -1,4 +1,5 @@
 import * as path from "path"
+import * as fs from "fs/promises"
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron"
 import { ImageMeta } from "./preload_master";
 import { ImageData } from "./preload_worker"
@@ -8,11 +9,26 @@ interface Image {
   image_data: ImageData
 }
 
+const invalid_image_data = {
+  liked: -1,
+  collection: -1,
+  view: -1
+}
+
 type ImageMetaList = Array<ImageMeta>
 type ImageList = Array<Image>
 
 interface Dispatcher {
   Next(): Image | null
+  image_list: ImageList
+}
+
+const is_show = true
+
+function Sleep(ms: number) {
+  return new Promise<void>(
+    resolve => { setTimeout(resolve, ms) }
+  )
 }
 
 class Worker {
@@ -24,30 +40,56 @@ class Worker {
       webPreferences: {
         preload: path.join(__dirname, "preload_worker.js")
       },
-      show: false,
+      show: is_show,
     })
     this.window.removeMenu()
+    this.window.webContents.openDevTools()
     this.id = "worker-" + this.window.id.toString()
   }
   async ParseImage(image: Image): Promise<ImageData> {
-    await this.window.loadURL(image.image_meta.artwork_link)
+    // let retry_number = 0
+    for (; ;) {
+      try {
+        this.Log("loading url")
+        await this.window.loadURL(image.image_meta.artwork_link)
+        this.Log("load url done")
+        break
+      } catch (err) {
+        this.Log("error occurs")
+        break
+        // retry_number++
+        // if (retry_number >= 10) return invalid_image_data
+        // await Sleep(1000)
+      }
+    }
     return await new Promise<ImageData>(resolve => {
       this.on_image_parsed = resolve
-      this.window.webContents.send("get-liked-number", this.id)
+      this.window.webContents.send("get-image-data", this.id)
     })
   }
   async Start(dispatcher: Dispatcher) {
     ipcMain.on(this.id, (_event: IpcMainEvent, image_data: ImageData) => {
+      console.log("on ipc main")
       if (this.on_image_parsed == null) throw "on_image_parsed is empty"
-      this.on_image_parsed(image_data)
+      this.on_image_parsed?.(image_data)
     })
+    let count = 0
     for (; ;) {
       const image = dispatcher.Next()
-      if (image === null) break
+      this.Log("parsing image", image)
+      if (image === null) {
+        this.Log("done")
+        break
+      }
       const image_data = await this.ParseImage(image)
+      this.Log("get image data", image_data)
       image.image_data = image_data
+      this.Log("finish jobs:", ++count)
     }
     ipcMain.removeHandler(this.id)
+  }
+  private Log(...args: any) {
+    console.log(this.id, ...args)
   }
 }
 
@@ -62,17 +104,10 @@ class Master {
       },
       width: 1920,
       height: 1080,
-      show: false,
+      show: is_show,
     })
     this.window.removeMenu()
     this.id = "master-" + this.window.id.toString()
-  }
-  GetDispatcher(): Dispatcher {
-    return {
-      Next(): Image | null {
-        return null
-      }
-    }
   }
   private async OnImageMetaListReceived(): Promise<ImageMetaList> {
     return (await new Promise<ImageMetaList>(resolve => {
@@ -98,7 +133,7 @@ class Master {
     const image_list: ImageList = []
     for (let i = 0; i < image_meta_list.length; i++) {
       image_list.push({
-        image_data: { liked: -1 },
+        image_data: invalid_image_data,
         image_meta: image_meta_list[i],
       })
     }
@@ -108,7 +143,8 @@ class Master {
         const index = cursor++
         if (index >= image_list.length) return null
         return image_list[index]
-      }
+      },
+      image_list: image_list
     }
   }
 }
@@ -152,6 +188,9 @@ export class Crawler {
       for (let i = 0; i < promise_list.length; i++) {
         await promise_list[i]
       }
+      await fs.appendFile("result.json", JSON.stringify({ page: page, data: dispatcher.image_list }))
     }
+    this.master.window.close()
+    this.worker_list.forEach(worker => { worker.window.close() })
   }
 }
