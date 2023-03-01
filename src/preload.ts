@@ -13,7 +13,7 @@ function Function1() {
   }
   scroll().then(() => {
     document.querySelectorAll("a").forEach(
-      (a, _) => {
+      (a) => {
         if (artwork_regex.test(a.href) && a.firstChild?.firstChild != undefined) {
           url_list.push(a.href)
           image_list.push(a.firstChild.firstChild)
