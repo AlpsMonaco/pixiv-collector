@@ -4,12 +4,12 @@ import config from "./config"
 import { Crawler } from "./crawler";
 
 async function GetMainWindowConfig(): Promise<BrowserWindowConstructorOptions> {
-  let main_window_config: BrowserWindowConstructorOptions = {
+  const main_window_config: BrowserWindowConstructorOptions = {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
   }
-  let app_config = await config.Get()
+  const app_config = await config.Get()
   app_config.Match("number", app_config.window.height, () => { main_window_config.height = app_config.window.height })
   app_config.Match("number", app_config.window.width, () => { main_window_config.width = app_config.window.width })
   app_config.Match("number", app_config.window.x, () => { main_window_config.x = app_config.window.x })
@@ -19,7 +19,7 @@ async function GetMainWindowConfig(): Promise<BrowserWindowConstructorOptions> {
 }
 
 async function GetProxyConfig(): Promise<ProxyConfig> {
-  let proxy_config: ProxyConfig = {
+  const proxy_config: ProxyConfig = {
     proxyRules: "socks5://127.0.0.1:7890"
   }
   // let app_config = await config.Get()
@@ -45,7 +45,7 @@ async function CreateMenu(main_window: BrowserWindow) {
         },
         {
           click: () => {
-            let crawler = new Crawler({ search_word: "ブラジャー" })
+            const crawler = new Crawler({ search_word: "ブラジャー" })
             crawler.Start().then().catch(e => console.error(e))
           },
           label: 'function-2',
@@ -67,22 +67,28 @@ async function CreateMenu(main_window: BrowserWindow) {
 }
 
 async function RegisterEvents(main_window: BrowserWindow) {
-  let app_config = await config.Get()
+  const app_config = await config.Get()
   main_window.on("moved", () => {
-    let positions = main_window.getPosition()
+    const positions = main_window.getPosition()
     app_config.window.x = positions[0]
     app_config.window.y = positions[1]
+    config.Save().catch(err => console.error(err))
   })
   main_window.on('resized', () => {
-    let size_list = main_window.getSize()
+    const size_list = main_window.getSize()
     app_config.window.width = size_list[0]
     app_config.window.height = size_list[1]
+    config.Save().catch(err => console.error(err))
   })
-  main_window.on('maximize', (ev: { sender: BrowserWindow }) => {
+  main_window.on('maximize', (/* ev: { sender: BrowserWindow } */) => {
     app_config.window.maxmized = true
     main_window.show()
+    config.Save().catch(err => console.error(err))
   })
-  main_window.on('unmaximize', () => { app_config.window.maxmized = false })
+  main_window.on('unmaximize', () => {
+    app_config.window.maxmized = false
+    config.Save().catch(err => console.error(err))
+  })
 }
 
 async function CreateMainWindow() {
@@ -90,7 +96,7 @@ async function CreateMainWindow() {
   if ((await config.Get()).window.maxmized === true) {
     main_window.maximize()
   }
-  RegisterEvents(main_window)
+  await RegisterEvents(main_window)
   // main_window.webContents.openDevTools()
   Menu.setApplicationMenu(await CreateMenu(main_window))
   await main_window.webContents.session.setProxy(
@@ -103,13 +109,10 @@ function RegisterAppEvents() {
   app.on('window-all-closed', function () {
     if (process.platform !== 'darwin') app.quit()
   })
-  app.on("before-quit", () => {
-    config.Save()
-  })
 }
 
 (async function () {
   RegisterAppEvents()
   await app.whenReady()
   await CreateMainWindow()
-})()
+})().catch(err => console.error(err))

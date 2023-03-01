@@ -23,13 +23,12 @@ class Config {
     this.window = {}
     this.proxy = {}
   }
-  Match(type_name: "number" | "string" | 'boolean', target: any, match_fn: () => void) {
+  Match(type_name: "number" | "string" | 'boolean', target: number | string | boolean | undefined, match_fn: () => void) {
     if (typeof target == type_name) match_fn()
   }
   async Read() {
     try {
-      let config: { window?: Window, proxy?: Proxy }
-        = JSON.parse((await fs.readFile(this.file_path)).toString())
+      const config: { window?: Window, proxy?: Proxy } = JSON.parse((await fs.readFile(this.file_path)).toString())
       if (typeof config.window == 'object') {
         this.window = config.window
       }
@@ -67,7 +66,3 @@ namespace config {
 }
 
 export default config;
-
-// (async () => {
-
-// })()

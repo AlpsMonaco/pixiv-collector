@@ -1,9 +1,9 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron"
+import { ipcRenderer } from "electron"
 
 function Function1() {
-  let url_list: Array<string> = []
-  let image_list: Array<any> = []
-  let artwork_regex = new RegExp("^.+artworks/[0-9]+$")
+  const url_list: Array<string> = []
+  const image_list: Array<any> = []
+  const artwork_regex = new RegExp("^.+artworks/[0-9]+$")
   async function scroll() {
     for (let i = 0; i < document.body.scrollHeight;) {
       i += 20;
@@ -22,30 +22,12 @@ function Function1() {
     )
     console.dir(url_list)
     console.dir(image_list)
-  })
+  }).catch(err => console.error(err))
 }
 
 function Function2() {
-
+  return
 }
-
-function GetUrlList(): Array<string> {
-  let url_list: Array<string> = []
-  const artwork_regex = new RegExp("^.+artworks/[0-9]+$")
-  document.querySelectorAll("a").forEach(
-    (a, _) => {
-      if (artwork_regex.test(a.href) && a.firstChild?.firstChild != undefined) {
-        url_list.push(a.href)
-      }
-    }
-  )
-  return url_list
-}
-
 
 ipcRenderer.on('function-1', () => { Function1() })
 ipcRenderer.on('function-2', () => { Function2() })
-
-// contextBridge.exposeInMainWorld('electronAPI', {
-//   handleCounter: (listener: (event: IpcRendererEvent, ...args: any[]) => void) => ipcRenderer.on('update-counter', listener)
-// })
