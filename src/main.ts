@@ -7,6 +7,7 @@ async function GetMainWindowConfig(): Promise<BrowserWindowConstructorOptions> {
   const main_window_config: BrowserWindowConstructorOptions = {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      webviewTag: true
     },
   }
   const app_config = await config.Get()
@@ -45,7 +46,7 @@ async function CreateMenu(main_window: BrowserWindow) {
         },
         {
           click: () => {
-             main_window.webContents.send('function-2', 1)
+            main_window.webContents.send('function-2', 1)
             // const crawler = new Crawler({ search_word: "2B", begin_page: 1, end_page: 1, work_number: 1 })
             // crawler.Start().then().catch(e => console.error(e))
           },
@@ -111,7 +112,10 @@ async function CreateMainWindow() {
   await main_window.webContents.session.setProxy(
     await GetProxyConfig()
   )
-  await main_window.loadURL("https://www.pixiv.net/artworks/80993683")
+  await main_window.loadURL("https://www.pixiv.net/")
+  // await main_window.loadFile(
+  // "../index.html"
+  // )
 }
 
 function RegisterAppEvents() {

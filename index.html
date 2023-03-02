@@ -1,13 +1,26 @@
-<!DOCTYPE html>
-<html>
-
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
-  <title>Menu Counter</title>
+  <style>
+    body {
+      width: 100vw;
+      height: 100vh;
+      margin: 0px;
+      padding: 0px;
+      overflow-y: hidden;
+    }
+  </style>
 </head>
+
+<script>
+  addEventListener("resize", (event) => {
+    document.getElementById('main-webview').style.height = window.innerHeight - 40 + "px"
+  });
+</script>
+
 <body>
-  Current value: <strong id="counter">0</strong>
-  <script src="./dist/renderer.js"></script>
+  <div id="navi-bar" style="height:40px;width:100vw;background-color: black;position: fixed;z-index: 99999;">
+    <button onclick="test()">goback</button>
+  </div>
+  <div>
+    <webview id="main-webview" src="https://pixiv.net" style="height:100vh;padding-top: 40px;"></webview>
+  </div>
 </body>
-</html>
