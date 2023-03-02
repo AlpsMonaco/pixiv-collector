@@ -43,7 +43,6 @@ async function GetImageData() {
     view: -1
   }
   for (let i = 0; i < 10; i++) {
-    console.log(i + 1, "start")
     const ul_list = document.querySelectorAll('ul')
     if (ul_list.length == 0) {
       await Sleep(1000)
@@ -54,11 +53,9 @@ async function GetImageData() {
         await Sleep(1000)
         continue
       }
-      console.log("got image data area", li_list)
       image_data.liked = parseInt(li_list[0].innerText.replace(',', ''))
       image_data.collection = parseInt(li_list[1].innerText.replace(',', ''))
       image_data.view = parseInt(li_list[2].innerText.replace(',', ''))
-      console.log(image_data)
       break
     }
   }

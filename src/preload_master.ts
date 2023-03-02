@@ -1,8 +1,7 @@
 import { ipcRenderer, IpcRendererEvent } from "electron"
 
 export interface ImageMeta {
-  artwork_link: string,
-  thumb_link: string
+  artwork_link: string
 }
 
 function Sleep(ms: number) {
@@ -18,14 +17,7 @@ async function GetImageMetaList(): Promise<Array<ImageMeta>> {
   for (let i = 0; i < anchor_element_list.length; i++) {
     const a = anchor_element_list[i]
     if (artwork_regex.test(a.href) && a.firstChild?.firstChild != undefined) {
-      const thumb = <HTMLImageElement>a.firstChild.firstChild
-      for (let i = 0; i < 10; i++) {
-        if (thumb.src === undefined)
-          await Sleep(100)
-        else
-          break
-      }
-      url_list.push({ artwork_link: a.href, thumb_link: thumb.src })
+      url_list.push({ artwork_link: a.href })
     }
   }
   return url_list.length > 4 ? url_list.slice(4) : []

@@ -56,6 +56,7 @@ class Worker {
     this.error_log_id = (this.id + "-error").toUpperCase()
   }
   async ParseImage(image_src_url: string): Promise<ImageData> {
+    this.LogInfo("parsing image from url:" + image_src_url)
     // for (; ;) {
     try {
       this.LogInfo("loading url:" + image_src_url)
@@ -63,7 +64,7 @@ class Worker {
       this.LogInfo("load url done")
       // break
     } catch (err) {
-      this.LogError("load url error\n" + err)
+      this.LogError("load url error\n" + JSON.stringify(err))
     }
     // }
     return await new Promise<ImageData>(resolve => {
@@ -151,7 +152,7 @@ class Master {
       this.LogInfo("loading url " + url)
       await this.window.loadURL(url)
     } catch (err) {
-      this.LogError("load url error\n" + err)
+      this.LogError("load url error\n" + JSON.stringify(err))
     }
     await this.RenderFullPage()
     const image_meta_list = await this.OnImageMetaListReceived()
