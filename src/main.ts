@@ -52,7 +52,7 @@ async function CreateMenu(main_window: BrowserWindow) {
         },
         {
           click: () => {
-            const crawler = new Crawler({ search_word: "2B", begin_page: 1, end_page: 1 })
+            const crawler = new Crawler({ search_word: "2B", begin_page: 1, end_page: 10 })
             crawler.Start().then().catch(e => console.error(e))
           },
           label: 'function-3',

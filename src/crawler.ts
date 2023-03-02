@@ -151,10 +151,13 @@ class Master {
     try {
       this.LogInfo("loading url " + url)
       await this.window.loadURL(url)
+      this.LogInfo("load url done")
     } catch (err) {
       this.LogError("load url error\n" + JSON.stringify(err))
     }
+    this.LogInfo("waiting for page full load")
     await this.RenderFullPage()
+    this.LogInfo("page full loaded")
     const image_meta_list = await this.OnImageMetaListReceived()
     if (image_meta_list.length == 0) return null
     this.LogInfo("get image meta list" + JSON.stringify(image_meta_list))
@@ -201,7 +204,7 @@ export class Crawler {
     this.search_word = options.search_word
     this.begin_page = typeof options.begin_page == "number" ? options.begin_page : 1
     this.end_page = typeof options.end_page == "number" ? options.end_page : 1
-    if (this.end_page > this.begin_page) this.end_page = this.begin_page
+    if (this.end_page < this.begin_page) this.end_page = this.begin_page
     this.work_number = typeof options.work_number == "number" ? options.work_number : 5
     this.master = new Master()
     for (let i = 0; i < this.work_number; i++) {
@@ -210,6 +213,12 @@ export class Crawler {
   }
 
   async Start(): Promise<void> {
+    Log.Info("start crawling: " + JSON.stringify({
+      search_word: this.search_word,
+      begin_page: this.begin_page,
+      end_page: this.end_page,
+      worker_num: this.work_number
+    }))
     for (let page = this.begin_page; page <= this.end_page; page++) {
       const dispatcher = await this.master.Parse(this.search_word, page)
       if (dispatcher === null)
@@ -222,7 +231,7 @@ export class Crawler {
       for (let i = 0; i < promise_list.length; i++) {
         await promise_list[i]
       }
-      await fs.appendFile("result.json", JSON.stringify({ page: page, data: this.master.GetImageList() }))
+      await fs.appendFile("result.json", JSON.stringify({ page: page, data: this.master.GetImageList() }, null, 4))
     }
     this.master.window.close()
     this.worker_list.forEach(worker => { worker.window.close() })
