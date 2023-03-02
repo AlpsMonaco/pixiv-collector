@@ -85,10 +85,19 @@ class Worker {
         break
       }
       this.LogInfo("parsing image from: " + task.image_src_url)
-      const image_data = await this.ParseImage(task.image_src_url)
-      this.LogInfo("get image data: " + JSON.stringify(image_data))
-      task.Done(image_data)
-      this.LogInfo("finish jobs:" + (++count).toString())
+      for (; ;) {
+        const image_data = await this.ParseImage(task.image_src_url)
+        if (image_data.collection == -1 && image_data.liked == -1 && image_data.view == -1) {
+          this.LogError("get image data failed,waiting for 30s")
+          await Sleep(30000)
+          continue
+        } else {
+          this.LogInfo("get image data: " + JSON.stringify(image_data))
+          task.Done(image_data)
+          this.LogInfo("finish jobs:" + (++count).toString())
+          break
+        }
+      }
     }
     ipcMain.removeHandler(this.id)
   }
