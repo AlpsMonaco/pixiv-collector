@@ -1,0 +1,16 @@
+<head>
+  <script type="text/javascript">
+    function start() {
+      const xhr = new XMLHttpRequest()
+      xhr.open("POST", "https://foo.bar")
+      xhr.onerror = function (...args) { console.error(args) }
+      xhr.send()
+      console.log(1)
+    }
+    console.log(2)
+  </script>
+</head>
+
+<body>
+  <button onclick="start()">start</button>
+</body>

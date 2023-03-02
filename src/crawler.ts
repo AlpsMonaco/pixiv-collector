@@ -3,6 +3,7 @@ import * as fs from "fs/promises"
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron"
 import { ImageMeta } from "./preload_master";
 import { ImageData } from "./preload_worker"
+import Log from "./log";
 
 interface Image {
   image_meta: ImageMeta,
@@ -18,12 +19,16 @@ const invalid_image_data = {
 type ImageMetaList = Array<ImageMeta>
 type ImageList = Array<Image>
 
-interface Dispatcher {
-  Next(): Image | null
-  image_list: ImageList
+interface Task {
+  image_src_url: string
+  Done: (data: ImageData) => void
 }
 
-const is_show = true
+interface Dispatcher {
+  Next(): Task | null
+}
+
+const is_show = false
 
 function Sleep(ms: number) {
   return new Promise<void>(
@@ -34,6 +39,8 @@ function Sleep(ms: number) {
 class Worker {
   window: BrowserWindow
   id: string
+  private readonly info_log_id: string
+  private readonly error_log_id: string
   on_image_parsed: null | ((image_data: ImageData) => void) = null
   constructor() {
     this.window = new BrowserWindow({
@@ -45,23 +52,20 @@ class Worker {
     this.window.removeMenu()
     this.window.webContents.openDevTools()
     this.id = "worker-" + this.window.id.toString()
+    this.info_log_id = (this.id + "-info").toUpperCase()
+    this.error_log_id = (this.id + "-error").toUpperCase()
   }
-  async ParseImage(image: Image): Promise<ImageData> {
-    // let retry_number = 0
-    for (; ;) {
-      try {
-        this.Log("loading url")
-        await this.window.loadURL(image.image_meta.artwork_link)
-        this.Log("load url done")
-        break
-      } catch (err) {
-        this.Log("error occurs")
-        break
-        // retry_number++
-        // if (retry_number >= 10) return invalid_image_data
-        // await Sleep(1000)
-      }
+  async ParseImage(image_src_url: string): Promise<ImageData> {
+    // for (; ;) {
+    try {
+      this.LogInfo("loading url:" + image_src_url)
+      await this.window.loadURL(image_src_url)
+      this.LogInfo("load url done")
+      // break
+    } catch (err) {
+      this.LogError("load url error\n" + err)
     }
+    // }
     return await new Promise<ImageData>(resolve => {
       this.on_image_parsed = resolve
       this.window.webContents.send("get-image-data", this.id)
@@ -69,27 +73,29 @@ class Worker {
   }
   async Start(dispatcher: Dispatcher) {
     ipcMain.on(this.id, (_event: IpcMainEvent, image_data: ImageData) => {
-      console.log("on ipc main")
       if (this.on_image_parsed == null) throw "on_image_parsed is empty"
       this.on_image_parsed?.(image_data)
     })
     let count = 0
     for (; ;) {
-      const image = dispatcher.Next()
-      this.Log("parsing image", image)
-      if (image === null) {
-        this.Log("done")
+      const task = dispatcher.Next()
+      if (task === null) {
+        this.LogInfo("no more task,stop")
         break
       }
-      const image_data = await this.ParseImage(image)
-      this.Log("get image data", image_data)
-      image.image_data = image_data
-      this.Log("finish jobs:", ++count)
+      this.LogInfo("parsing image from: " + task.image_src_url)
+      const image_data = await this.ParseImage(task.image_src_url)
+      this.LogInfo("get image data: " + JSON.stringify(image_data))
+      task.Done(image_data)
+      this.LogInfo("finish jobs:" + (++count).toString())
     }
     ipcMain.removeHandler(this.id)
   }
-  private Log(...args: any) {
-    console.log(this.id, ...args)
+  private LogInfo(content: string) {
+    Log.Customize(this.info_log_id, content)
+  }
+  private LogError(content: string) {
+    Log.Customize(this.error_log_id, content)
   }
 }
 
@@ -97,6 +103,9 @@ class Master {
   static readonly url_format = "https://www.pixiv.net/tags/{search_word}/artworks?p={page_num}"
   window: BrowserWindow
   id: string
+  private image_list: ImageList
+  private readonly info_log_id: string
+  private readonly error_log_id: string
   constructor() {
     this.window = new BrowserWindow({
       webPreferences: {
@@ -108,6 +117,18 @@ class Master {
     })
     this.window.removeMenu()
     this.id = "master-" + this.window.id.toString()
+    this.image_list = []
+    this.info_log_id = (this.id + "-info").toUpperCase()
+    this.error_log_id = (this.id + "-error").toUpperCase()
+  }
+  GetImageList(): ImageList {
+    return this.image_list
+  }
+  private LogInfo(content: string) {
+    Log.Customize(this.info_log_id, content)
+  }
+  private LogError(content: string) {
+    Log.Customize(this.error_log_id, content)
   }
   private async OnImageMetaListReceived(): Promise<ImageMetaList> {
     return (await new Promise<ImageMetaList>(resolve => {
@@ -126,25 +147,37 @@ class Master {
   }
   async Parse(search_word: string, page_num: number): Promise<Dispatcher | null> {
     const url = Master.url_format.replace("{search_word}", search_word).replace("{page_num}", page_num.toString())
-    await this.window.loadURL(url)
+    try {
+      this.LogInfo("loading url " + url)
+      await this.window.loadURL(url)
+    } catch (err) {
+      this.LogError("load url error\n" + err)
+    }
     await this.RenderFullPage()
     const image_meta_list = await this.OnImageMetaListReceived()
     if (image_meta_list.length == 0) return null
-    const image_list: ImageList = []
+    this.LogInfo("get image meta list" + JSON.stringify(image_meta_list))
+    this.image_list = []
     for (let i = 0; i < image_meta_list.length; i++) {
-      image_list.push({
+      this.image_list.push({
         image_data: invalid_image_data,
         image_meta: image_meta_list[i],
       })
     }
     let cursor = 0
+    const image_list = this.image_list
     return {
-      Next(): Image | null {
+      Next(): Task | null {
         const index = cursor++
         if (index >= image_list.length) return null
-        return image_list[index]
+        const image = image_list[index]
+        return {
+          image_src_url: image.image_meta.artwork_link,
+          Done(data) {
+            image.image_data = data
+          }
+        }
       },
-      image_list: image_list
     }
   }
 }
@@ -188,7 +221,7 @@ export class Crawler {
       for (let i = 0; i < promise_list.length; i++) {
         await promise_list[i]
       }
-      await fs.appendFile("result.json", JSON.stringify({ page: page, data: dispatcher.image_list }))
+      await fs.appendFile("result.json", JSON.stringify({ page: page, data: this.master.GetImageList() }))
     }
     this.master.window.close()
     this.worker_list.forEach(worker => { worker.window.close() })

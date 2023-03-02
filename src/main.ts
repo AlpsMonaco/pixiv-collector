@@ -55,7 +55,7 @@ async function CreateMenu(main_window: BrowserWindow) {
         {
           click: () => {
             //  main_window.webContents.send('function-2', 1)
-            const crawler = new Crawler({ search_word: "2B", begin_page: 1, end_page: 1, work_number: 1 })
+            const crawler = new Crawler({ search_word: "2B", begin_page: 1, end_page: 1 })
             crawler.Start().then().catch(e => console.error(e))
           },
           label: 'function-3',
