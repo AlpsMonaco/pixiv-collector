@@ -65,7 +65,7 @@ class Worker {
       this.LogInfo("load url done")
       // break
     } catch (err) {
-      this.LogError("load url error\n" + JSON.stringify(err))
+      this.LogError("load url error:" + JSON.stringify(err))
     }
     // }
     return await new Promise<ImageData>(resolve => {
@@ -166,7 +166,7 @@ class Master {
       await this.window.loadURL(url)
       this.LogInfo("load url done")
     } catch (err) {
-      this.LogError("load url error\n" + JSON.stringify(err))
+      this.LogError("load url error:" + JSON.stringify(err))
     }
     this.LogInfo("waiting for page full load")
     await this.RenderFullPage()
