@@ -45,7 +45,8 @@ class Worker {
   constructor() {
     this.window = new BrowserWindow({
       webPreferences: {
-        preload: path.join(__dirname, "preload_worker.js")
+        preload: path.join(__dirname, "preload_worker.js"),
+        images: false
       },
       show: is_show,
     })
@@ -73,9 +74,11 @@ class Worker {
     })
   }
   async Start(dispatcher: Dispatcher) {
-    ipcMain.on(this.id, (_event: IpcMainEvent, image_data: ImageData) => {
+    ipcMain.on(this.id, (event: IpcMainEvent, image_data: ImageData) => {
       if (this.on_image_parsed == null) throw "on_image_parsed is empty"
-      this.on_image_parsed?.(image_data)
+      // const webContents = event.sender
+      // BrowserWindow.fromWebContents(webContents)?.webContents.stop()
+      this.on_image_parsed(image_data)
     })
     let count = 0
     for (; ;) {
@@ -85,19 +88,20 @@ class Worker {
         break
       }
       this.LogInfo("parsing image from: " + task.image_src_url)
-      for (; ;) {
-        const image_data = await this.ParseImage(task.image_src_url)
-        if (image_data.collection == -1 && image_data.liked == -1 && image_data.view == -1) {
-          this.LogError("get image data failed,waiting for 30s")
-          await Sleep(30000)
-          continue
-        } else {
-          this.LogInfo("get image data: " + JSON.stringify(image_data))
-          task.Done(image_data)
-          this.LogInfo("finish jobs:" + (++count).toString())
-          break
-        }
-      }
+      // for (; ;) {
+      const image_data = await this.ParseImage(task.image_src_url)
+      // if (image_data.collection == -1 && image_data.liked == -1 && image_data.view == -1) {
+      //   this.LogError("get image data failed,waiting for 30s")
+      //   await Sleep(30000)
+      //   continue
+      // }
+      // else {
+      this.LogInfo("get image data: " + JSON.stringify(image_data))
+      task.Done(image_data)
+      this.LogInfo("finish jobs:" + (++count).toString())
+      //   break
+      // }
+      // }
     }
     ipcMain.removeHandler(this.id)
   }
@@ -177,16 +181,21 @@ class Master {
         image_meta: image_meta_list[i],
       })
     }
-    let cursor = 0
-    const image_list = this.image_list
+    const pending_image_list: Array<Image> = []
+    for (let i = 0; i < this.image_list.length; i++) {
+      pending_image_list.push(this.image_list[i])
+    }
     return {
       Next(): Task | null {
-        const index = cursor++
-        if (index >= image_list.length) return null
-        const image = image_list[index]
+        const image = pending_image_list.shift()
+        if (image == undefined) return null
         return {
           image_src_url: image.image_meta.artwork_link,
           Done(data) {
+            if (data.collection == -1 && data.liked == -1 && data.view == -1) {
+              pending_image_list.push(image)
+              return
+            }
             image.image_data = data
           }
         }
@@ -222,6 +231,7 @@ export class Crawler {
   }
 
   async Start(): Promise<void> {
+    const result_list = []
     Log.Info("start crawling: " + JSON.stringify({
       search_word: this.search_word,
       begin_page: this.begin_page,
@@ -240,8 +250,9 @@ export class Crawler {
       for (let i = 0; i < promise_list.length; i++) {
         await promise_list[i]
       }
-      await fs.appendFile("result.json", JSON.stringify({ page: page, data: this.master.GetImageList() }, null, 4))
+      result_list.push({ page: page, data: this.master.GetImageList() })
     }
+    await fs.writeFile('result.json', JSON.stringify(result_list))
     this.master.window.close()
     this.worker_list.forEach(worker => { worker.window.close() })
   }

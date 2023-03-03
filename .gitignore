@@ -107,3 +107,4 @@ package-lock.json
 output
 /config.json
 /src/config.json
+result.json
