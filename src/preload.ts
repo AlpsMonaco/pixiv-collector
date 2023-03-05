@@ -6,6 +6,18 @@ function Sleep(ms: number) {
   )
 }
 
+function getBase64Image(img: HTMLImageElement) {
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  console.log(img)
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+  ctx.drawImage(img as HTMLImageElement, 0, 0);
+  const dataURL = canvas.toDataURL("image/png");
+  console.log(img.src)
+  console.log(dataURL)
+}
+
 export interface ImageData {
   liked: number,
   collection: number,
@@ -85,4 +97,10 @@ function Function2() {
 }
 
 ipcRenderer.on('function-1', () => { Function1() })
-ipcRenderer.on('function-2', () => { Function2() })
+ipcRenderer.on('function-2', () => {
+  document.querySelectorAll('img').forEach(a => {
+    getBase64Image(a)
+  })
+
+
+})

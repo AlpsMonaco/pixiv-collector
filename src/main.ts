@@ -7,7 +7,8 @@ async function GetMainWindowConfig(): Promise<BrowserWindowConstructorOptions> {
   const main_window_config: BrowserWindowConstructorOptions = {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      webviewTag: true
+      webviewTag: true,
+      webSecurity: false
     },
   }
   const app_config = await config.Get()
