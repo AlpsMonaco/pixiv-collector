@@ -53,7 +53,7 @@ async function CreateMenu(main_window: BrowserWindow) {
         },
         {
           click: () => {
-            const crawler = new Crawler({ search_word: "ぶっかけ", begin_page: 20, end_page: 22, work_number: 10 })
+            const crawler = new Crawler({ search_word: "ぶっかけ", begin_page: 1, end_page: 1, work_number: 10 })
             crawler.Start().then().catch(e => console.error(e))
           },
           label: 'function-3',
@@ -97,15 +97,25 @@ async function RegisterEvents(main_window: BrowserWindow) {
     app_config.window.maxmized = false
     config.Save().catch(err => console.error(err))
   })
+  main_window.webContents.on('devtools-opened', () => {
+    app_config.open_devtools = true
+    config.Save().catch(err => console.error(err))
+  })
+  main_window.webContents.on('devtools-closed', () => {
+    app_config.open_devtools = false
+    config.Save().catch(err => console.error(err))
+  })
 }
 
 async function CreateMainWindow() {
   const main_window = new BrowserWindow(await GetMainWindowConfig())
-  if ((await config.Get()).window.maxmized === true) {
+  const app_config = await config.Get()
+  if (app_config.window.maxmized === true) {
     main_window.maximize()
   }
   await RegisterEvents(main_window)
-  // main_window.webContents.openDevTools()
+  if (app_config.open_devtools === true)
+    main_window.webContents.openDevTools()
   Menu.setApplicationMenu(await CreateMenu(main_window))
   await main_window.webContents.session.setProxy(
     await GetProxyConfig()
