@@ -53,7 +53,7 @@ async function CreateMenu(main_window: BrowserWindow) {
         },
         {
           click: () => {
-            const crawler = new Crawler({ search_word: "ぶっかけ", begin_page: 1, end_page: 1, work_number: 10 })
+            const crawler = new Crawler({ search_word: "風景", begin_page: 1, end_page: 1, work_number: 10 })
             crawler.Start().then().catch(e => console.error(e))
           },
           label: 'function-3',
@@ -65,7 +65,7 @@ async function CreateMenu(main_window: BrowserWindow) {
           label: 'Reload',
         },
         {
-          click: () => main_window.webContents.openDevTools(),
+          click: (_, browser_window) => browser_window?.webContents.openDevTools(),
           label: 'Open Console',
         }
       ]
@@ -120,7 +120,7 @@ async function CreateMainWindow() {
   await main_window.webContents.session.setProxy(
     await GetProxyConfig()
   )
-  await main_window.loadURL("https://www.pixiv.net/")
+  await main_window.loadURL("https://www.pixiv.net/tags/%E9%A2%A8%E6%99%AF/artworks?s_mode=s_tag")
   // await main_window.loadFile(
   // "../index.html"
   // )

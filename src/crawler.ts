@@ -28,7 +28,10 @@ interface Dispatcher {
   Next(): Task | null
 }
 
-const is_show = false
+namespace debug {
+  export const is_master_show = false
+  export const is_worker_show = false
+}
 
 function Sleep(ms: number) {
   return new Promise<void>(
@@ -46,9 +49,10 @@ class Worker {
     this.window = new BrowserWindow({
       webPreferences: {
         preload: path.join(__dirname, "preload_worker.js"),
-        images: false
+        images: false,
+        webSecurity: false,
       },
-      show: is_show,
+      show: debug.is_worker_show,
     })
     this.window.removeMenu()
     this.window.webContents.openDevTools()
@@ -123,11 +127,12 @@ class Master {
   constructor() {
     this.window = new BrowserWindow({
       webPreferences: {
-        preload: path.join(__dirname, "preload_master.js")
+        preload: path.join(__dirname, "preload_master.js"),
+        webSecurity: false,
       },
       width: 1920,
       height: 1080,
-      show: is_show,
+      show: debug.is_master_show,
     })
     this.window.removeMenu()
     this.id = "master-" + this.window.id.toString()

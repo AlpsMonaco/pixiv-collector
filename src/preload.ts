@@ -6,16 +6,13 @@ function Sleep(ms: number) {
   )
 }
 
-function getBase64Image(img: HTMLImageElement) {
+function ImageToBase64(img: HTMLImageElement) {
   const canvas = document.createElement("canvas");
   canvas.width = img.naturalWidth;
   canvas.height = img.naturalHeight;
-  console.log(img)
   const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
   ctx.drawImage(img as HTMLImageElement, 0, 0);
-  const dataURL = canvas.toDataURL("image/png");
-  console.log(img.src)
-  console.log(dataURL)
+  return canvas.toDataURL("image/png");
 }
 
 export interface ImageData {
@@ -23,7 +20,6 @@ export interface ImageData {
   collection: number,
   view: number
 }
-
 
 const target_regex_match = new RegExp("[0-9,]+")
 function IsImageDataArea(ul: HTMLUListElement): boolean {
@@ -79,7 +75,7 @@ function Function1() {
   scroll().then(() => {
     document.querySelectorAll("a").forEach(
       (a) => {
-        if (artwork_regex.test(a.href) && a.firstChild?.firstChild != undefined) {
+        if (artwork_regex.test(a.href) && a.firstChild?.firstChild?.nodeName == "IMG") {
           url_list.push(a.href)
           image_list.push(a.firstChild.firstChild)
         }
@@ -99,8 +95,6 @@ function Function2() {
 ipcRenderer.on('function-1', () => { Function1() })
 ipcRenderer.on('function-2', () => {
   document.querySelectorAll('img').forEach(a => {
-    getBase64Image(a)
+    console.log(ImageToBase64(a))
   })
-
-
 })

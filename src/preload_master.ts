@@ -2,6 +2,7 @@ import { ipcRenderer, IpcRendererEvent } from "electron"
 
 export interface ImageMeta {
   artwork_link: string
+  thumb_base64: string
 }
 
 function Sleep(ms: number) {
@@ -10,14 +11,26 @@ function Sleep(ms: number) {
   )
 }
 
+function ImageToBase64(img: HTMLImageElement) {
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+  ctx.drawImage(img as HTMLImageElement, 0, 0);
+  return canvas.toDataURL("image/png");
+}
+
 async function GetImageMetaList(): Promise<Array<ImageMeta>> {
   const url_list: Array<ImageMeta> = []
   const artwork_regex = new RegExp("^.+artworks/[0-9]+$")
   const anchor_element_list = document.querySelectorAll("a")
   for (let i = 0; i < anchor_element_list.length; i++) {
     const a = anchor_element_list[i]
-    if (artwork_regex.test(a.href) && a.firstChild?.firstChild != undefined) {
-      url_list.push({ artwork_link: a.href })
+    if (artwork_regex.test(a.href) && a.firstChild?.firstChild?.nodeName == "IMG") {
+      url_list.push({
+        artwork_link: a.href,
+        thumb_base64: ImageToBase64(a.firstChild.firstChild as HTMLImageElement)
+      })
     }
   }
   return url_list.length > 4 ? url_list.slice(4) : []
